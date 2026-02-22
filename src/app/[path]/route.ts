@@ -31,9 +31,9 @@ export async function GET(
     const result = await query(
       `SELECT id, content, is_one_time, is_consumed, expires_at
        FROM snippets
-       WHERE path = $1`,
+       WHERE path = ?`,
       [path]
-    );
+    ) as { rows: Record<string, unknown>[] };
 
     if (result.rows.length === 0) {
       return new Response('Snippet not found or expired.\n', { status: 404 });
@@ -41,7 +41,8 @@ export async function GET(
 
     const snippet = result.rows[0];
 
-    if (new Date(snippet.expires_at) < new Date()) {
+    // Explicit cast since we know the column comes from the DB schema
+    if (new Date(snippet.expires_at as string) < new Date()) {
       return new Response('Snippet expired.\n', { status: 404 });
     }
 
@@ -51,7 +52,7 @@ export async function GET(
 
     if (snippet.is_one_time && !snippet.is_consumed) {
       // Mark as consumed
-      await query(`UPDATE snippets SET is_consumed = true WHERE id = $1`, [snippet.id]);
+      await query(`UPDATE snippets SET is_consumed = 1 WHERE id = ?`, [snippet.id]);
     }
 
     const userAgent = request.headers.get('user-agent') || '';
@@ -60,7 +61,7 @@ export async function GET(
     // Determine if we should wrap in OSC52 (currently just outputting raw text to easily pipe into pbcopy/xclip for MVP. Wrapping in OSC52 can be complex depending on terminal multiplexers like tmux, so raw output is safer default for pipes).
 
     if (isCurl || new URL(request.url).searchParams.get('raw') === '1') {
-      return new Response(snippet.content, {
+      return new Response(snippet.content as string, {
         status: 200,
         headers: {
           'Content-Type': 'text/plain; charset=utf-8',
@@ -71,7 +72,7 @@ export async function GET(
 
     // A browser trying to access the path
     // For MVP, just return the raw text as well. We can upgrade to a nice UI representation later.
-    return new Response(snippet.content, {
+    return new Response(snippet.content as string, {
       status: 200,
       headers: {
         'Content-Type': 'text/plain; charset=utf-8',

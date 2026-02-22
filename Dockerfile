@@ -31,6 +31,9 @@ COPY --from=builder /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
+# Create sqlite data directory and set permissions
+RUN mkdir -p .data && chown nextjs:nodejs .data
+
 USER nextjs
 
 EXPOSE 3000

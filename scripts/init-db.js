@@ -1,48 +1,61 @@
-const { Pool } = require('pg');
-require('dotenv').config({ path: '.env.local' });
+const sqlite3 = require('sqlite3').verbose();
+const path = require('path');
+const fs = require('fs');
 
-async function initDb() {
-  if (!process.env.DATABASE_URL) {
-    console.error('No DATABASE_URL found. Skipping DB init.');
-    return;
+function main() {
+  console.log('Starting SQLite database initialization...');
+
+  const dataDir = path.join(process.cwd(), '.data');
+  if (!fs.existsSync(dataDir)) {
+    console.log('Creating .data directory...');
+    fs.mkdirSync(dataDir, { recursive: true });
   }
 
-  const pool = new Pool({
-    connectionString: process.env.DATABASE_URL,
-    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : undefined,
+  const dbPath = process.env.DATABASE_URL || path.join(dataDir, 'copyit.db');
+  console.log(`Connecting to SQLite at: ${dbPath}`);
+
+  const db = new sqlite3.Database(dbPath, (err) => {
+    if (err) {
+      console.error('❌ Failed to connect to SQLite dump', err);
+      process.exit(1);
+    }
   });
 
-  try {
-    console.log('Creating snippets table if it does not exist...');
-    await pool.query(`
+  db.serialize(() => {
+    db.run('PRAGMA journal_mode = WAL');
+
+    console.log('Creating snippets table...');
+    db.run(`
       CREATE TABLE IF NOT EXISTS snippets (
-        id UUID PRIMARY KEY,
-        path VARCHAR(255) UNIQUE NOT NULL,
+        id TEXT PRIMARY KEY,
+        path TEXT UNIQUE NOT NULL,
         content TEXT NOT NULL,
-        ttl_seconds INT NOT NULL,
+        ttl_seconds INTEGER NOT NULL,
         is_one_time BOOLEAN DEFAULT FALSE,
         is_consumed BOOLEAN DEFAULT FALSE,
-        expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
-        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        expires_at DATETIME NOT NULL
       );
     `);
 
-    // Create an index on path to speed up retrievals
-    await pool.query(`
+    console.log('Creating index on path...');
+    db.run(`
       CREATE INDEX IF NOT EXISTS snippets_path_idx ON snippets(path);
     `);
 
-    // Create an index on expires_at for easier cleanup sweeps
-    await pool.query(`
+    console.log('Creating index on expires_at...');
+    db.run(`
       CREATE INDEX IF NOT EXISTS snippets_expires_at_idx ON snippets(expires_at);
     `);
+  });
 
-    console.log('Database initialized successfully.');
-  } catch (error) {
-    console.error('Failed to initialize database:', error);
-  } finally {
-    await pool.end();
-  }
+  db.close((err) => {
+    if (err) {
+      console.error(err.message);
+    } else {
+      console.log('✅ SQLite database initialized successfully.');
+    }
+  });
 }
 
-initDb();
+main();

@@ -41,26 +41,33 @@ export async function POST(req: Request) {
     let inserted = false;
     let attempts = 0;
 
+    // Define outside loop so it's accessible in the return
+    let expiresAtIso = '';
+
     // Retry loop for path collision
     while (!inserted && attempts < 5) {
       path = generatePath();
       const id = uuidv4();
       const expiresAt = new Date(Date.now() + ttlSeconds * 1000);
 
+      expiresAtIso = expiresAt.toISOString();
+
       try {
+        // Since sqlite3 driver error codes can be opaque, we do a quick check instead
+        const existing = await query(`SELECT id FROM snippets WHERE path = ?`, [path]) as { rows?: unknown[] };
+        if (existing.rows && existing.rows.length > 0) {
+          attempts++;
+          continue;
+        }
+
         await query(
           `INSERT INTO snippets (id, path, content, ttl_seconds, is_one_time, expires_at)
-           VALUES ($1, $2, $3, $4, $5, $6)`,
-          [id, path, content, ttlSeconds, isOneTime, expiresAt.toISOString()]
+           VALUES (?, ?, ?, ?, ?, ?)`,
+          [id, path, content, ttlSeconds, isOneTime ? 1 : 0, expiresAtIso]
         );
         inserted = true;
       } catch (err: unknown) {
-        // 23505 is the unique_violation error code in postgres
-        if (typeof err === 'object' && err !== null && 'code' in err && (err as { code: string }).code === '23505') {
-          attempts++;
-        } else {
-          throw err;
-        }
+        throw err;
       }
     }
 
@@ -69,7 +76,6 @@ export async function POST(req: Request) {
     }
 
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://copyit.pipeops.app';
-    const expiresAtIso = new Date(Date.now() + ttlSeconds * 1000).toISOString();
 
     return NextResponse.json({
       path,
