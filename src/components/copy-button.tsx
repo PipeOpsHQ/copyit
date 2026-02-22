@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { Copy, Check, X } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 
 type CopyButtonProps = {
@@ -12,7 +11,7 @@ type CopyButtonProps = {
 
 export function CopyButton({
   text,
-  label = "Copy",
+  label = "COPY",
   className = "",
 }: CopyButtonProps) {
   const [status, setStatus] = useState<"idle" | "copied" | "error">("idle");
@@ -29,54 +28,48 @@ export function CopyButton({
   }
 
   return (
-    <motion.button
+    <button
       type="button"
       onClick={handleCopy}
-      whileHover={{ scale: 1.015 }}
-      whileTap={{ scale: 0.97 }}
-      className={`inline-flex items-center justify-center gap-2 rounded-full border px-4 py-2 text-sm font-medium text-[color:var(--text-body)] transition hover:border-[color:var(--border-strong)] hover:text-[color:var(--text-strong)] ${className}`}
-      style={{ background: "var(--surface-strong)", borderColor: "var(--border)" }}
+      className={`font-mono text-sm font-bold uppercase transition-colors px-3 py-1 border-2 border-transparent hover:border-[color:var(--accent)] hover:bg-[color:var(--accent)] hover:text-black ${className}`}
     >
       <AnimatePresence mode="wait" initial={false}>
         {status === "idle" ? (
           <motion.span
             key="idle"
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            className="inline-flex items-center gap-2"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="inline-block"
           >
-            <Copy className="h-4 w-4" />
-            {label}
+            [ {label} ]
           </motion.span>
         ) : null}
 
         {status === "copied" ? (
           <motion.span
             key="copied"
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            className="inline-flex items-center gap-2 text-[color:var(--accent)]"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="inline-block text-[color:var(--accent)] group-hover:text-black"
           >
-            <Check className="h-4 w-4" />
-            Copied
+            [ DONE ]
           </motion.span>
         ) : null}
 
         {status === "error" ? (
           <motion.span
             key="error"
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            className="inline-flex items-center gap-2 text-red-500"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="inline-block text-red-500"
           >
-            <X className="h-4 w-4" />
-            Blocked
+            [ ERR! ]
           </motion.span>
         ) : null}
       </AnimatePresence>
-    </motion.button>
+    </button>
   );
 }

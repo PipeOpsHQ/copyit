@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+
 import { query } from '@/lib/db';
 import { redis } from '@/lib/redis';
 

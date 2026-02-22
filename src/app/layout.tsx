@@ -1,18 +1,6 @@
 import type { Metadata } from "next";
-import { Inter, Outfit, JetBrains_Mono } from "next/font/google";
+import { JetBrains_Mono } from "next/font/google";
 import "./globals.css";
-
-const inter = Inter({
-  variable: "--font-inter",
-  subsets: ["latin"],
-  display: "swap",
-});
-
-const outfit = Outfit({
-  variable: "--font-outfit",
-  subsets: ["latin"],
-  display: "swap",
-});
 
 const jetbrainsMono = JetBrains_Mono({
   variable: "--font-jetbrains-mono",
@@ -21,9 +9,8 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Copyit | Seamless Terminal Snippet Sharing",
-  description:
-    "Paste once. Curl anywhere. Fast, secure snippet sharing between terminals built for modern infra workflows.",
+  title: "Copyit | [ TERMINAL RELAY ]",
+  description: "Raw endpoint for cross-machine snippet transportation.",
 };
 
 export default function RootLayout({
@@ -34,7 +21,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${inter.variable} ${outfit.variable} ${jetbrainsMono.variable} antialiased bg-background text-foreground min-h-screen font-sans`}
+        className={`${jetbrainsMono.variable} antialiased bg-background text-foreground min-h-screen font-mono`}
       >
         {children}
       </body>

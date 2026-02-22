@@ -54,9 +54,9 @@ export async function POST(req: Request) {
           [id, path, content, ttlSeconds, isOneTime, expiresAt.toISOString()]
         );
         inserted = true;
-      } catch (err: any) {
+      } catch (err: unknown) {
         // 23505 is the unique_violation error code in postgres
-        if (err.code === '23505') {
+        if (typeof err === 'object' && err !== null && 'code' in err && (err as { code: string }).code === '23505') {
           attempts++;
         } else {
           throw err;
